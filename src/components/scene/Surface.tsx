@@ -1,5 +1,5 @@
 import { useRef, useCallback } from 'react'
-import { useThree, useFrame } from '@react-three/fiber'
+import { useFrame, ThreeEvent } from '@react-three/fiber'
 import * as THREE from 'three'
 
 interface Props {
@@ -10,13 +10,12 @@ interface Props {
 // Desktop fallback: a semi-visible ground grid the user taps on
 export function DesktopSurface({ onHit, active }: Props) {
   const planeRef = useRef<THREE.Mesh>(null)
-  const { camera, gl } = useThree()
 
   const handlePointerDown = useCallback(
-    (e: THREE.Event & { point: THREE.Vector3 }) => {
+    (e: ThreeEvent<PointerEvent>) => {
       if (!active) return
       e.stopPropagation()
-      onHit((e as any).point)
+      onHit(e.point)
     },
     [active, onHit]
   )
@@ -27,7 +26,7 @@ export function DesktopSurface({ onHit, active }: Props) {
       <mesh
         ref={planeRef}
         rotation={[-Math.PI / 2, 0, 0]}
-        onPointerDown={handlePointerDown as any}
+        onPointerDown={handlePointerDown}
       >
         <planeGeometry args={[30, 30]} />
         <meshBasicMaterial transparent opacity={0} />

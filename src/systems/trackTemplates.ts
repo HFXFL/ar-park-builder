@@ -30,19 +30,73 @@ function arc(
 }
 
 export const TRACK_TEMPLATES: Record<TrackPieceType, TrackTemplate> = {
-  entrance: {
-    type: 'entrance',
-    label: 'Entrance',
+
+  // ── Park gate ───────────────────────────────────────────────────────────
+  'park-entrance': {
+    type: 'park-entrance',
+    label: 'Park Gate',
     icon: '🎪',
-    exitOffset: new THREE.Vector3(0, 0, 1.2),
+    exitOffset: new THREE.Vector3(0, 0, 1.4),
     exitEuler: new THREE.Euler(0, 0, 0),
     centerPath: [
       new THREE.Vector3(0, 0, 0),
-      new THREE.Vector3(0, 0, 0.6),
-      new THREE.Vector3(0, 0, 1.2),
+      new THREE.Vector3(0, 0, 0.7),
+      new THREE.Vector3(0, 0, 1.4),
     ],
-    length: 1.2,
+    length: 1.4,
   },
+
+  // ── Footpath pieces ─────────────────────────────────────────────────────
+  'path-straight': {
+    type: 'path-straight',
+    label: 'Path',
+    icon: '▬',
+    exitOffset: new THREE.Vector3(0, 0, 1),
+    exitEuler: new THREE.Euler(0, 0, 0),
+    centerPath: [
+      new THREE.Vector3(0, 0, 0),
+      new THREE.Vector3(0, 0, 0.5),
+      new THREE.Vector3(0, 0, 1),
+    ],
+    length: 1,
+  },
+  'path-curve-left': {
+    type: 'path-curve-left',
+    label: 'Path L',
+    icon: '↰',
+    exitOffset: new THREE.Vector3(-1, 0, 1),
+    exitEuler: new THREE.Euler(0, -Math.PI / 2, 0),
+    centerPath: arc(-1, 0, 1, 0, Math.PI / 2),
+    length: Math.PI / 2,
+  },
+  'path-curve-right': {
+    type: 'path-curve-right',
+    label: 'Path R',
+    icon: '↱',
+    exitOffset: new THREE.Vector3(1, 0, 1),
+    exitEuler: new THREE.Euler(0, Math.PI / 2, 0),
+    centerPath: arc(1, 0, 1, Math.PI, Math.PI / 2),
+    length: Math.PI / 2,
+  },
+
+  // ── Ride entrance — bridges path → coaster track ─────────────────────
+  'ride-entrance': {
+    type: 'ride-entrance',
+    label: 'Ride Gate',
+    icon: '🎢',
+    exitOffset: new THREE.Vector3(0, 0, 1.6),
+    exitEuler: new THREE.Euler(0, 0, 0),
+    centerPath: [
+      new THREE.Vector3(0, 0, 0),
+      new THREE.Vector3(0, 0, 0.5),
+      new THREE.Vector3(0, 0, 1),
+      new THREE.Vector3(0, 0, 1.3),
+      new THREE.Vector3(0, 0, 1.6),
+    ],
+    length: 1.6,
+  },
+
+  // ── Coaster track ────────────────────────────────────────────────────
   straight: {
     type: 'straight',
     label: 'Straight',
@@ -65,7 +119,7 @@ export const TRACK_TEMPLATES: Record<TrackPieceType, TrackTemplate> = {
     exitOffset: new THREE.Vector3(-1, 0, 1),
     exitEuler: new THREE.Euler(0, -Math.PI / 2, 0),
     centerPath: arc(-1, 0, 1, 0, Math.PI / 2),
-    length: (Math.PI / 2) * 1,
+    length: Math.PI / 2,
   },
   'curve-right': {
     type: 'curve-right',
@@ -74,7 +128,7 @@ export const TRACK_TEMPLATES: Record<TrackPieceType, TrackTemplate> = {
     exitOffset: new THREE.Vector3(1, 0, 1),
     exitEuler: new THREE.Euler(0, Math.PI / 2, 0),
     centerPath: arc(1, 0, 1, Math.PI, Math.PI / 2),
-    length: (Math.PI / 2) * 1,
+    length: Math.PI / 2,
   },
   incline: {
     type: 'incline',
@@ -119,7 +173,14 @@ export const TRACK_TEMPLATES: Record<TrackPieceType, TrackTemplate> = {
   },
 }
 
-export const TOOLBAR_ORDER: TrackPieceType[] = [
+export const PATH_TOOLBAR: TrackPieceType[] = [
+  'path-straight',
+  'path-curve-left',
+  'path-curve-right',
+  'ride-entrance',
+]
+
+export const RIDE_TOOLBAR: TrackPieceType[] = [
   'straight',
   'curve-left',
   'curve-right',

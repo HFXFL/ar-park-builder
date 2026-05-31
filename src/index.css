@@ -260,6 +260,60 @@ html, body, #root {
 
 .btn-run:active { transform: scale(0.95); }
 
+/* ── Toolbar tabs ───────────────────────────── */
+.toolbar-tabs {
+  display: flex;
+  gap: 6px;
+  padding: 0 4px 8px;
+}
+
+.toolbar-tab {
+  flex: 1;
+  padding: 8px 0;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border);
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.toolbar-tab.active {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-dim);
+}
+
+.toolbar-tab.locked {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.tab-lock {
+  font-size: 10px;
+  opacity: 0.7;
+}
+
+.tool-btn.ride-gate {
+  border-color: rgba(42, 95, 168, 0.5);
+}
+
+.tool-btn.ride-gate.selected {
+  border-color: #4a7fc8;
+  background: rgba(42, 95, 168, 0.15);
+  box-shadow: 0 0 16px rgba(42, 95, 168, 0.4);
+}
+
+.tool-btn.ride-gate.selected .tool-btn-label {
+  color: #4a7fc8;
+}
+
 /* ── Toolbar ────────────────────────────────── */
 .toolbar {
   position: fixed;

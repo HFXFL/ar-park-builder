@@ -8,16 +8,27 @@ interface Props {
 }
 
 export function HUD({ onRun, onStop, isRunning }: Props) {
-  const { phase, placedPieces, isARMode, resetTrack } = useGameStore(
-    useShallow((s) => ({
-      phase: s.phase,
-      placedPieces: s.placedPieces,
-      isARMode: s.isARMode,
-      resetTrack: s.resetTrack,
-    }))
-  )
+  const { phase, placedPieces, isARMode, buildMode, hasRideEntrance, resetTrack } =
+    useGameStore(
+      useShallow((s) => ({
+        phase: s.phase,
+        placedPieces: s.placedPieces,
+        isARMode: s.isARMode,
+        buildMode: s.buildMode,
+        hasRideEntrance: s.hasRideEntrance,
+        resetTrack: s.resetTrack,
+      }))
+    )
 
-  const pieceCount = Math.max(0, placedPieces.length - 1) // exclude entrance
+  const pathCount = placedPieces.filter((p) =>
+    ['path-straight', 'path-curve-left', 'path-curve-right'].includes(p.type)
+  ).length
+
+  const rideCount = placedPieces.filter((p) =>
+    ['straight', 'curve-left', 'curve-right', 'incline', 'decline', 'station'].includes(p.type)
+  ).length
+
+  const canRun = hasRideEntrance && rideCount >= 2
 
   return (
     <div className="hud">
@@ -25,15 +36,18 @@ export function HUD({ onRun, onStop, isRunning }: Props) {
         <span className={`hud-badge ${isARMode ? 'active' : ''}`}>
           {isARMode ? '📷 AR' : '🖥 3D'}
         </span>
-        {phase === 'building' && (
-          <span className="hud-badge">
-            🧩 {pieceCount}
+        {phase === 'building' && buildMode === 'path' && (
+          <span className="hud-badge">🚶 {pathCount}</span>
+        )}
+        {phase === 'building' && buildMode === 'ride' && (
+          <span className="hud-badge" style={{ borderColor: 'rgba(42,95,168,0.5)', color: '#4a7fc8' }}>
+            🎢 {rideCount}
           </span>
         )}
       </div>
 
       <div className="hud-right">
-        {phase === 'building' && pieceCount >= 3 && !isRunning && (
+        {phase === 'building' && canRun && !isRunning && (
           <button className="btn-run" onPointerDown={onRun}>
             ▶ Run
           </button>
@@ -41,7 +55,10 @@ export function HUD({ onRun, onStop, isRunning }: Props) {
         {isRunning && (
           <button
             className="btn-run"
-            style={{ background: 'linear-gradient(135deg, #ff4444 0%, #cc0000 100%)', boxShadow: '0 0 20px rgba(255,68,68,0.3)' }}
+            style={{
+              background: 'linear-gradient(135deg, #ff4444 0%, #cc0000 100%)',
+              boxShadow: '0 0 20px rgba(255,68,68,0.3)',
+            }}
             onPointerDown={onStop}
           >
             ■ Stop

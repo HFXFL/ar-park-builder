@@ -43,7 +43,7 @@ export default function App() {
       <SceneRoot running={running} />
 
       {/* Entrance placement overlay */}
-      {phase === 'place-entrance' && <EntranceOverlay isARMode={isARMode} />}
+      {phase === 'place-park-entrance' && <EntranceOverlay isARMode={isARMode} />}
 
       {/* HUD (top bar) */}
       {(phase === 'building' || running) && (

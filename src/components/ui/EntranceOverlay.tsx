@@ -6,7 +6,7 @@ export function EntranceOverlay({ isARMode }: Props) {
   return (
     <div className="entrance-overlay">
       <div className="entrance-card">
-        <h2>Place Your Park Entrance</h2>
+        <h2>Place Your Park Gate</h2>
         <p>
           {isARMode
             ? 'Point your camera at a flat surface — floor or table — then tap to place your park entrance.'

@@ -13,12 +13,14 @@ interface SceneProps {
 }
 
 function ParkScene({ running }: SceneProps) {
-  const { phase, placedPieces, chainExit, setParkOrigin, selectedTool } =
+  const { phase, placedPieces, buildMode, pathChainExit, rideChainExit, setParkOrigin, selectedTool } =
     useGameStore(
       useShallow((s) => ({
         phase: s.phase,
         placedPieces: s.placedPieces,
-        chainExit: s.chainExit,
+        buildMode: s.buildMode,
+        pathChainExit: s.pathChainExit,
+        rideChainExit: s.rideChainExit,
         setParkOrigin: s.setParkOrigin,
         selectedTool: s.selectedTool,
       }))
@@ -26,23 +28,24 @@ function ParkScene({ running }: SceneProps) {
 
   const handleSurfaceHit = useCallback(
     (point: THREE.Vector3) => {
-      if (phase === 'place-entrance') {
+      if (phase === 'place-park-entrance') {
         setParkOrigin(point)
       }
     },
     [phase, setParkOrigin]
   )
 
+  const activeExit = buildMode === 'ride' ? rideChainExit : pathChainExit
   const ghostPosition: [number, number, number] = [
-    chainExit.position.x,
-    chainExit.position.y,
-    chainExit.position.z,
+    activeExit.position.x,
+    activeExit.position.y,
+    activeExit.position.z,
   ]
   const ghostQuaternion: [number, number, number, number] = [
-    chainExit.quaternion.x,
-    chainExit.quaternion.y,
-    chainExit.quaternion.z,
-    chainExit.quaternion.w,
+    activeExit.quaternion.x,
+    activeExit.quaternion.y,
+    activeExit.quaternion.z,
+    activeExit.quaternion.w,
   ]
 
   return (
@@ -67,7 +70,7 @@ function ParkScene({ running }: SceneProps) {
       {/* Ground */}
       <DesktopSurface
         onHit={handleSurfaceHit}
-        active={phase === 'place-entrance'}
+        active={phase === 'place-park-entrance'}
       />
 
       {/* Soft shadow blob under park */}
@@ -92,7 +95,7 @@ function ParkScene({ running }: SceneProps) {
       ))}
 
       {/* Ghost preview for next piece */}
-      {phase === 'building' && selectedTool && selectedTool !== 'entrance' && (
+      {phase === 'building' && selectedTool && (
         <TrackPiece
           type={selectedTool}
           position={ghostPosition}
@@ -102,7 +105,7 @@ function ParkScene({ running }: SceneProps) {
       )}
 
       {/* Placement reticle */}
-      {phase === 'place-entrance' && (
+      {phase === 'place-park-entrance' && (
         <PlacementReticle
           position={new THREE.Vector3(0, 0.01, 0)}
           visible

@@ -6,12 +6,12 @@ export function LandingScreen() {
 
   const startDesktop = () => {
     setARMode(false)
-    setPhase('place-entrance')
+    setPhase('place-park-entrance')
   }
 
   const startAR = () => {
     setARMode(true)
-    setPhase('place-entrance')
+    setPhase('place-park-entrance')
   }
 
   const isWebXRAvailable =

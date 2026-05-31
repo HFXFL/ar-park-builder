@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import type { PlacedPiece, ChainExit } from '../types/game'
+import { RIDE_TRACK_TYPES } from '../types/game'
 import { TRACK_TEMPLATES } from './trackTemplates'
 
 export const INITIAL_CHAIN_EXIT: ChainExit = {
@@ -28,21 +29,21 @@ export function computeChainExit(pieces: PlacedPiece[]): ChainExit {
   return { position: pos, quaternion: quat }
 }
 
+// Cart only follows coaster track — excludes footpath pieces
 export function buildWorldPath(pieces: PlacedPiece[]): THREE.Vector3[] {
+  const ridePieces = pieces.filter((p) => RIDE_TRACK_TYPES.includes(p.type))
   const allPoints: THREE.Vector3[] = []
 
-  for (const piece of pieces) {
+  for (const piece of ridePieces) {
     const template = TRACK_TEMPLATES[piece.type]
     const piecePos = new THREE.Vector3(...piece.position)
     const pieceQuat = new THREE.Quaternion(...piece.quaternion)
 
-    const localPoints = template.centerPath
-    const worldPoints = localPoints.map((lp) =>
+    const worldPoints = template.centerPath.map((lp) =>
       lp.clone().applyQuaternion(pieceQuat).add(piecePos)
     )
 
     if (allPoints.length > 0) {
-      // skip the first point of each subsequent piece (duplicate of previous exit)
       allPoints.push(...worldPoints.slice(1))
     } else {
       allPoints.push(...worldPoints)
@@ -50,13 +51,6 @@ export function buildWorldPath(pieces: PlacedPiece[]): THREE.Vector3[] {
   }
 
   return allPoints
-}
-
-export function isLoopClosable(pieces: PlacedPiece[], threshold = 0.3): boolean {
-  if (pieces.length < 4) return false
-  const exit = computeChainExit(pieces)
-  const start = new THREE.Vector3(...pieces[0].position)
-  return exit.position.distanceTo(start) < threshold
 }
 
 export function nextPiecePlacement(

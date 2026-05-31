@@ -3,12 +3,16 @@ import { useFrame, ThreeEvent } from '@react-three/fiber'
 import * as THREE from 'three'
 
 interface Props {
+  /** Called when user taps/clicks the ground (place-entrance phase or path building) */
   onHit: (point: THREE.Vector3) => void
+  /** Called every pointermove — drives the ghost preview in build mode */
+  onHover?: (point: THREE.Vector3) => void
   active: boolean
+  /** Show the grass + grid (true during building phase) */
+  showGrid?: boolean
 }
 
-// Desktop fallback: a semi-visible ground grid the user taps on
-export function DesktopSurface({ onHit, active }: Props) {
+export function DesktopSurface({ onHit, onHover, active, showGrid = true }: Props) {
   const planeRef = useRef<THREE.Mesh>(null)
 
   const handlePointerDown = useCallback(
@@ -20,28 +24,46 @@ export function DesktopSurface({ onHit, active }: Props) {
     [active, onHit]
   )
 
+  const handlePointerMove = useCallback(
+    (e: ThreeEvent<PointerEvent>) => {
+      if (!onHover) return
+      onHover(e.point)
+    },
+    [onHover]
+  )
+
   return (
     <>
-      {/* Invisible hit target */}
+      {/* Grass ground plane */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.001, 0]}>
+        <planeGeometry args={[40, 40]} />
+        <meshStandardMaterial color="#3a6b28" roughness={1} />
+      </mesh>
+
+      {/* Invisible large hit target (pointer events) */}
       <mesh
         ref={planeRef}
         rotation={[-Math.PI / 2, 0, 0]}
+        position={[0, 0.002, 0]}
         onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
       >
-        <planeGeometry args={[30, 30]} />
+        <planeGeometry args={[40, 40]} />
         <meshBasicMaterial transparent opacity={0} />
       </mesh>
 
-      {/* Visual grid */}
-      <gridHelper
-        args={[20, 40, '#3d2200', '#1c1c1c']}
-        position={[0, 0.001, 0]}
-      />
+      {/* Build grid — 1-unit cells, RCT tile feel */}
+      {showGrid && (
+        <gridHelper
+          args={[20, 20, 0x2a5020, 0x2a5020]}
+          position={[0, 0.003, 0]}
+        />
+      )}
     </>
   )
 }
 
-// Reticle — shows where the next piece will land
+// ── Placement reticle ────────────────────────────────────────────────────────
 interface ReticleProps {
   position: THREE.Vector3
   visible: boolean

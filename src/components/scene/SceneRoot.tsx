@@ -1,4 +1,4 @@
-import { Suspense, useCallback } from 'react'
+import { Suspense, useCallback, useRef } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { OrbitControls, ContactShadows } from '@react-three/drei'
 import * as THREE from 'three'
@@ -13,33 +13,67 @@ interface SceneProps {
 }
 
 function ParkScene({ running }: SceneProps) {
-  const { phase, placedPieces, buildMode, pathChainExit, rideChainExit, setParkOrigin, selectedTool } =
-    useGameStore(
-      useShallow((s) => ({
-        phase: s.phase,
-        placedPieces: s.placedPieces,
-        buildMode: s.buildMode,
-        pathChainExit: s.pathChainExit,
-        rideChainExit: s.rideChainExit,
-        setParkOrigin: s.setParkOrigin,
-        selectedTool: s.selectedTool,
-      }))
-    )
+  const {
+    phase,
+    buildMode,
+    placedPieces,
+    pathChainExit,
+    rideChainExit,
+    hoverGridPos,
+    selectedTool,
+    setParkOrigin,
+    setHoverGridPos,
+    placePathAtPoint,
+  } = useGameStore(
+    useShallow((s) => ({
+      phase: s.phase,
+      buildMode: s.buildMode,
+      placedPieces: s.placedPieces,
+      pathChainExit: s.pathChainExit,
+      rideChainExit: s.rideChainExit,
+      hoverGridPos: s.hoverGridPos,
+      selectedTool: s.selectedTool,
+      setParkOrigin: s.setParkOrigin,
+      setHoverGridPos: s.setHoverGridPos,
+      placePathAtPoint: s.placePathAtPoint,
+    }))
+  )
+
+  // Throttle hover updates (~20 fps max) to avoid re-renders on every pixel
+  const lastHoverTime = useRef(0)
+  const handleHover = useCallback(
+    (point: THREE.Vector3) => {
+      const now = performance.now()
+      if (now - lastHoverTime.current < 50) return
+      lastHoverTime.current = now
+      setHoverGridPos(point)
+    },
+    [setHoverGridPos]
+  )
 
   const handleSurfaceHit = useCallback(
     (point: THREE.Vector3) => {
       if (phase === 'place-park-entrance') {
         setParkOrigin(point)
+        return
+      }
+      // Path mode: tapping ground places tile at that position
+      if (phase === 'building' && buildMode === 'path' && selectedTool) {
+        placePathAtPoint(point)
       }
     },
-    [phase, setParkOrigin]
+    [phase, buildMode, selectedTool, setParkOrigin, placePathAtPoint]
   )
 
+  // Ghost position: path mode follows pointer on ground, ride mode snaps to chain exit
   const activeExit = buildMode === 'ride' ? rideChainExit : pathChainExit
+  const ghostSource =
+    buildMode === 'path' && hoverGridPos ? hoverGridPos : activeExit.position
+
   const ghostPosition: [number, number, number] = [
-    activeExit.position.x,
-    activeExit.position.y,
-    activeExit.position.z,
+    ghostSource.x,
+    ghostSource.y,
+    ghostSource.z,
   ]
   const ghostQuaternion: [number, number, number, number] = [
     activeExit.quaternion.x,
@@ -48,43 +82,47 @@ function ParkScene({ running }: SceneProps) {
     activeExit.quaternion.w,
   ]
 
+  const isBuilding = phase === 'building'
+
   return (
     <>
-      {/* Lighting */}
-      <ambientLight intensity={0.45} color="#ffe8c8" />
+      {/* Lighting — warm daylight over green grass */}
+      <ambientLight intensity={0.6} color="#ffe8d0" />
       <directionalLight
-        position={[8, 12, 6]}
-        intensity={1.8}
+        position={[8, 14, 6]}
+        intensity={2.0}
         castShadow
         shadow-mapSize={[1024, 1024]}
         shadow-camera-near={0.1}
         shadow-camera-far={40}
-        shadow-camera-left={-10}
-        shadow-camera-right={10}
-        shadow-camera-top={10}
-        shadow-camera-bottom={-10}
-        color="#fff5e0"
+        shadow-camera-left={-12}
+        shadow-camera-right={12}
+        shadow-camera-top={12}
+        shadow-camera-bottom={-12}
+        color="#fff8e8"
       />
-      <hemisphereLight args={['#ffe0a0', '#303050', 0.35]} />
+      <hemisphereLight args={['#c8f0c8', '#1a3a0a', 0.5]} />
 
-      {/* Ground */}
+      {/* Grass ground + build grid */}
       <DesktopSurface
         onHit={handleSurfaceHit}
-        active={phase === 'place-park-entrance'}
+        onHover={handleHover}
+        active={phase === 'place-park-entrance' || (isBuilding && buildMode === 'path')}
+        showGrid={isBuilding}
       />
 
-      {/* Soft shadow blob under park */}
+      {/* Soft shadows */}
       {placedPieces.length > 0 && (
         <ContactShadows
-          position={[0, 0.001, 0]}
+          position={[0, 0.002, 0]}
           opacity={0.3}
-          scale={12}
-          blur={2}
-          far={1.5}
+          scale={14}
+          blur={2.5}
+          far={2}
         />
       )}
 
-      {/* Placed track pieces */}
+      {/* Placed pieces */}
       {placedPieces.map((piece) => (
         <TrackPiece
           key={piece.id}
@@ -94,8 +132,8 @@ function ParkScene({ running }: SceneProps) {
         />
       ))}
 
-      {/* Ghost preview for next piece */}
-      {phase === 'building' && selectedTool && (
+      {/* Ghost preview — path mode follows pointer, ride mode follows chain */}
+      {isBuilding && selectedTool && (
         <TrackPiece
           type={selectedTool}
           position={ghostPosition}
@@ -104,18 +142,15 @@ function ParkScene({ running }: SceneProps) {
         />
       )}
 
-      {/* Placement reticle */}
+      {/* Reticle during park-entrance placement */}
       {phase === 'place-park-entrance' && (
-        <PlacementReticle
-          position={new THREE.Vector3(0, 0.01, 0)}
-          visible
-        />
+        <PlacementReticle position={new THREE.Vector3(0, 0.01, 0)} visible />
       )}
 
-      {/* Coaster cart */}
+      {/* Cart only visible while running */}
       <CoasterCart pieces={placedPieces} running={running} />
 
-      {/* Camera controls (desktop only) */}
+      {/* Camera */}
       <OrbitControls
         enablePan
         enableZoom
@@ -140,10 +175,10 @@ interface Props {
 export function SceneRoot({ running }: Props) {
   return (
     <Canvas
-      camera={{ position: [0, 4, 7], fov: 55 }}
+      camera={{ position: [0, 5, 9], fov: 52 }}
       shadows
       gl={{ antialias: true, alpha: false }}
-      style={{ background: '#0d0d16' }}
+      style={{ background: '#1a3a0a' }}
     >
       <Suspense fallback={null}>
         <ParkScene running={running} />
